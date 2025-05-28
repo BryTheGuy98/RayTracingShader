@@ -13,6 +13,7 @@ The program can be run by executing "compute.bat" (only required the first time)
 
 # Features
 - Static ray casting with lighting and shadows
+- Box can be rotated to various angles
 
 # Screenshots
 <img src="readme/screenshot1.png" alt="Screenshot 1" width="400" >

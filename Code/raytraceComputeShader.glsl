@@ -21,8 +21,13 @@ float sphere_radius = 2.5;
 vec3 sphere_position = vec3(1.0, 0.0, -3.0);
 vec3 sphere_color = vec3(0.0, 0.0, 1.0);	// blue
 
-vec3 box_mins = vec3(-2.0, -2.0, 0.0);
-vec3 box_maxs = vec3(-0.5, 1.0, 2.0);
+vec3 box_mins = vec3(-0.5, -0.5, -1.0);
+vec3 box_maxs = vec3(0.5, 0.5, 1.0);
+vec3 box_pos = vec3(-1, -0.5, 1.0);
+const float DEG_TO_RAD = 3.1415926535 / 180.0;
+float box_xrot = 50.0;
+float box_yrot = 20.0;
+float box_zrot = 55.0;
 vec3 box_color = vec3(1.0, 0.0, 0.0); 	// read
 
 vec4 global_amb = vec4(0.3, 0.3, 0.3, 1.0);
@@ -36,11 +41,52 @@ vec4 objMat_diff = vec4(0.7, 0.7, 0.7, 1.0);
 vec4 objMat_spec = vec4(1.0, 1.0, 1.0, 1.0);
 float objMat_shin = 50.0f;
 
+mat4 buildTranslate(float x, float y, float z)
+{	mat4 trans = mat4(1.0, 0.0, 0.0, 0.0,
+						0.0, 1.0, 0.0, 0.0,
+						0.0, 0.0, 1.0, 0.0,
+						x, y, z, 1.0 );
+	return trans;
+}
+
+mat4 buildRotateX(float rad)
+{	mat4 xrot = mat4(1.0, 0.0, 0.0, 0.0,
+						0.0, cos(rad), -sin(rad), 0.0,
+						0.0, sin(rad), cos(rad), 0.0,
+						0.0, 0.0, 0.0, 1.0 );
+	return xrot;
+}
+
+mat4 buildRotateY(float rad)
+{	mat4 yrot = mat4(cos(rad), 0.0, sin(rad), 0.0,
+						0.0, 1.0, 0.0, 0.0,
+						-sin(rad), 0.0, cos(rad), 0.0,
+						0.0, 0.0, 0.0, 1.0 );
+	return yrot;
+}
+
+mat4 buildRotateZ(float rad)
+{	mat4 zrot = mat4(cos(rad), -sin(rad), 0.0, 0.0,
+						sin(rad), cos(rad), 0.0, 0.0,
+						0.0, 0.0, 1.0, 0.0,
+						0.0, 0.0, 0.0, 1.0 );
+	return zrot;
+}
+
 // check if the ray intersects with the box
 Collision intersect_box_object(Ray r)
 { 	// calculate box's world mins and maxs
-	vec3 t_min = (box_mins - r.start) / r.dir;
-	vec3 t_max = (box_maxs - r.start) / r.dir;
+	mat4 local_to_worldT = buildTranslate(box_pos.x, box_pos.y, box_pos.z);
+	mat4 local_to_worldR = buildRotateY(DEG_TO_RAD * box_yrot) * buildRotateX(DEG_TO_RAD * box_xrot) * buildRotateZ(DEG_TO_RAD * box_zrot);
+	mat4 local_to_worldTR = local_to_worldT * local_to_worldR;
+	mat4 world_to_localTR = inverse(local_to_worldTR);
+	mat4 world_to_localR = inverse(local_to_worldR);
+	
+	vec3 ray_start = (world_to_localTR * vec4(r.start, 1.0)).xyz;
+	vec3 ray_dir = (world_to_localR * vec4(r.dir, 1.0)).xyz;
+	
+	vec3 t_min = (box_mins - ray_start) / ray_dir;
+	vec3 t_max = (box_maxs - ray_start) / ray_dir;
 	vec3 t_minDist = min(t_min, t_max);
 	vec3 t_maxDist = max(t_min, t_max);
 	float t_near = max(max(t_minDist.x, t_minDist.y), t_minDist.z);
@@ -78,6 +124,9 @@ Collision intersect_box_object(Ray r)
 	
 	// if we hit the box from the negative axis, invert the normal
 	if (r.dir[face_index] > 0.0) c.n *= -1.0;
+	
+	// convert normal back to world space
+	c.n = transpose(inverse(mat3(local_to_worldR))) * c.n;
 	
 	// calculate the world-position of the intersection
 	c.p = r.start + c.t * r.dir;

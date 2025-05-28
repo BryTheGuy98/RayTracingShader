@@ -26,7 +26,6 @@ import java.lang.Math;
 
 public class Code extends JFrame implements GLEventListener, KeyListener
 {	private GLCanvas myCanvas;
-	private int buffer[] = new int[3];
 	private int screenQuadShader, raytraceShader;
 	
 	private int raytraceRenderWidth = 512;
@@ -39,7 +38,7 @@ public class Code extends JFrame implements GLEventListener, KeyListener
 	private byte[] screenTexture = new byte[raytraceRenderWidth * raytraceRenderHeight * 16];
 	
 	private int vao[] = new int[1]; // TODO: update
-	private int vbo[] = new int[19]; // TODO: update
+	private int vbo[] = new int[2]; // TODO: update
 	private long startTime = System.currentTimeMillis();
 
 	public Code() {
